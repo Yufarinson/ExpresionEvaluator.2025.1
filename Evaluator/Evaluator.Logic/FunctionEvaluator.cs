@@ -1,4 +1,7 @@
-﻿namespace Evaluator.Logic;
+﻿using System.Globalization;
+using System.Text;
+
+namespace Evaluator.Logic;
 
 public class FunctionEvaluator
 {
@@ -8,89 +11,103 @@ public class FunctionEvaluator
         return Calculate(postfix);
     }
 
-    private static double Calculate(string postfix)
+    private static double Calculate(List<string> postfix)
     {
         var stack = new Stack<double>();
-        foreach (var item in postfix)
+        foreach (var token in postfix)
         {
-            if (IsOperator(item))
+            if (IsOperator(token))
             {
                 var operator2 = stack.Pop();
                 var operator1 = stack.Pop();
-                stack.Push(Result(operator1, item, operator2));
+                stack.Push(Result(operator1, token[0], operator2));
             }
             else
             {
-                stack.Push(char.GetNumericValue(item));
+                // Se convierte el token a double (admite decimales y números de varios dígitos)
+                stack.Push(double.Parse(token, CultureInfo.InvariantCulture));
             }
         }
         return stack.Pop();
     }
 
-    private static double Result(double operator1, char item, double operator2)
+    private static double Result(double operator1, char op, double operator2)
     {
-        return item switch
+        return op switch
         {
             '+' => operator1 + operator2,
             '-' => operator1 - operator2,
             '*' => operator1 * operator2,
             '/' => operator1 / operator2,
             '^' => Math.Pow(operator1, operator2),
-            _ => throw new Exception("Invalid expresion"),
+            _ => throw new Exception("Invalid expression"),
         };
     }
 
-    private static string ToPostfix(string infix)
+    private static List<string> ToPostfix(string infix)
     {
+        var output = new List<string>();
         var stack = new Stack<char>();
-        var postfix = string.Empty;
-        foreach (var item in infix)
+        var number = new StringBuilder();
+
+        for (int i = 0; i < infix.Length; i++)
         {
-            if (IsOperator(item))
+            char ch = infix[i];
+
+            if (char.IsDigit(ch) || ch == '.')
             {
-                if (stack.Count == 0)
-                {
-                    stack.Push(item);
-                }
-                else
-                {
-                    if (item == ')')
-                    {
-                        do
-                        {
-                            postfix += stack.Pop();
-                        } while (stack.Peek() != '(');
-                        stack.Pop();
-                    }
-                    else
-                    {
-                        if (PriorityExpression(item) > PriorityStack(stack.Peek()))
-                        {
-                            stack.Push(item);
-                        }
-                        else
-                        {
-                            postfix += stack.Pop();
-                            stack.Push(item);
-                        }
-                    }
-                }
+                // Acumula dígitos y el punto decimal
+                number.Append(ch);
             }
             else
             {
-                postfix += item;
+                if (number.Length > 0)
+                {
+                    // Agrega el número completo acumulado a la salida
+                    output.Add(number.ToString());
+                    number.Clear();
+                }
+
+                if (ch == '(')
+                {
+                    stack.Push(ch);
+                }
+                else if (ch == ')')
+                {
+                    // Desapila hasta encontrar '('
+                    while (stack.Count > 0 && stack.Peek() != '(')
+                    {
+                        output.Add(stack.Pop().ToString());
+                    }
+                    if (stack.Count > 0 && stack.Peek() == '(')
+                    {
+                        stack.Pop();
+                    }
+                }
+                else if (IsOperator(ch))
+                {
+                    while (stack.Count > 0 && stack.Peek() != '(' && PriorityExpression(ch) <= PriorityStack(stack.Peek()))
+                    {
+                        output.Add(stack.Pop().ToString());
+                    }
+                    stack.Push(ch);
+                }
             }
         }
-        do
+        if (number.Length > 0)
         {
-            postfix += stack.Pop();
-        } while (stack.Count > 0);
-        return postfix;
+            output.Add(number.ToString());
+        }
+        while (stack.Count > 0)
+        {
+            output.Add(stack.Pop().ToString());
+        }
+        return output;
     }
 
-    private static int PriorityStack(char item)
+    private static int PriorityStack(char op)
     {
-        return item switch
+        return op switch
         {
             '^' => 3,
             '*' => 2,
@@ -102,9 +119,9 @@ public class FunctionEvaluator
         };
     }
 
-    private static int PriorityExpression(char item)
+    private static int PriorityExpression(char op)
     {
-        return item switch
+        return op switch
         {
             '^' => 4,
             '*' => 2,
@@ -116,5 +133,7 @@ public class FunctionEvaluator
         };
     }
 
-    private static bool IsOperator(char item) => "()^*/+-".IndexOf(item) >= 0;
+    private static bool IsOperator(char ch) => "()^*/+-".IndexOf(ch) >= 0;
+    private static bool IsOperator(string token) => token.Length == 1 && IsOperator(token[0]);
+
 }
