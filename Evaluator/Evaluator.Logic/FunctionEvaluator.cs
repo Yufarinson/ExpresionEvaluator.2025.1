@@ -24,16 +24,15 @@ public class FunctionEvaluator
             }
             else
             {
-                // Se convierte el token a double (admite decimales y números de varios dígitos)
                 stack.Push(double.Parse(token, CultureInfo.InvariantCulture));
             }
         }
         return stack.Pop();
     }
 
-    private static double Result(double operator1, char op, double operator2)
+    private static double Result(double operator1, char item, double operator2)
     {
-        return op switch
+        return item switch
         {
             '+' => operator1 + operator2,
             '-' => operator1 - operator2,
@@ -56,14 +55,12 @@ public class FunctionEvaluator
 
             if (char.IsDigit(ch) || ch == '.')
             {
-                // Acumula dígitos y el punto decimal
                 number.Append(ch);
             }
             else
             {
                 if (number.Length > 0)
                 {
-                    // Agrega el número completo acumulado a la salida
                     output.Add(number.ToString());
                     number.Clear();
                 }
@@ -74,7 +71,6 @@ public class FunctionEvaluator
                 }
                 else if (ch == ')')
                 {
-                    // Desapila hasta encontrar '('
                     while (stack.Count > 0 && stack.Peek() != '(')
                     {
                         output.Add(stack.Pop().ToString());
@@ -105,9 +101,9 @@ public class FunctionEvaluator
         return output;
     }
 
-    private static int PriorityStack(char op)
+    private static int PriorityStack(char item)
     {
-        return op switch
+        return item switch
         {
             '^' => 3,
             '*' => 2,
@@ -119,9 +115,9 @@ public class FunctionEvaluator
         };
     }
 
-    private static int PriorityExpression(char op)
+    private static int PriorityExpression(char item)
     {
-        return op switch
+        return item switch
         {
             '^' => 4,
             '*' => 2,
