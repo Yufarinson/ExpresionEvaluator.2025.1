@@ -8,4 +8,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Evaluator.Logic\Evaluator.Logic.csproj" />
+    <ProjectReference Include="..\Evaluator.UI.Console\Evaluator.UI.Console.csproj" />
+  </ItemGroup>
+
 </Project>
